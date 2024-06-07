@@ -3,7 +3,8 @@
 
 #include "stella_vslam/config.h"
 
-#include <sioclient/sio_client.h>
+//#include <sioclient/sio_client.h>
+#include <sio_client.h>
 
 namespace stella_vslam {
 class config;

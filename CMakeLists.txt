@@ -2,11 +2,32 @@ cmake_minimum_required(VERSION 3.1)
 project(socket_publisher LANGUAGES CXX C)
 
 # ----- Find dependencies -----
+if(APPLE)
+    # On macOS, use Homebrew's OpenMP
+    execute_process(COMMAND brew --prefix libomp
+                    OUTPUT_VARIABLE OpenMP_HOME
+                    OUTPUT_STRIP_TRAILING_WHITESPACE)
+    if(EXISTS "${OpenMP_HOME}")
+        set(OpenMP_C_FLAGS "-Xpreprocessor -fopenmp -I${OpenMP_HOME}/include")
+        set(OpenMP_CXX_FLAGS "-Xpreprocessor -fopenmp -I${OpenMP_HOME}/include")
+        set(OpenMP_C_LIB_NAMES "omp")
+        set(OpenMP_CXX_LIB_NAMES "omp")
+        set(OpenMP_omp_LIBRARY "${OpenMP_HOME}/lib/libomp.dylib")
+        link_directories("${OpenMP_HOME}/lib")
+    else()
+        message(FATAL_ERROR "OpenMP not found!")
+    endif()
+else()
+    find_package(OpenMP REQUIRED)
+    if(NOT OpenMP_FOUND)
+        message(FATAL_ERROR "OpenMP not found!")
+    endif()
+endif()
 
 find_package(stella_vslam REQUIRED)
 
-# socket.io-cpp-client
-find_package(sioclient REQUIRED)
+# Find sioclient package
+find_package(sioclient CONFIG REQUIRED)
 
 # Protobuf
 find_package(Protobuf REQUIRED)
@@ -47,6 +68,8 @@ set_target_properties(socket_publisher PROPERTIES
     ARCHIVE_OUTPUT_DIRECTORY ${PROJECT_BINARY_DIR}/lib
     LIBRARY_OUTPUT_DIRECTORY ${PROJECT_BINARY_DIR}/lib)
 
+target_include_directories(socket_publisher PUBLIC "/usr/local/include")
+
 target_include_directories(socket_publisher
     PUBLIC
     "$<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}/include/>"
@@ -60,10 +83,11 @@ target_link_libraries(socket_publisher
     PUBLIC
     stella_vslam::stella_vslam
     opencv_imgcodecs
-    ${SIOCLIENT_LIBRARY}
+    sioclient::sioclient
     ${PROTOBUF_LIBRARIES})
 
 # ----- Install configuration -----
+# (No changes needed)
 
 include(CMakePackageConfigHelpers)
 
@@ -90,6 +114,8 @@ install(EXPORT ${SOCKET_PUBLISHER_TARGETS_EXPORT_NAME}
     DESTINATION ${SOCKET_PUBLISHER_CONFIG_INSTALL_DIR})
 
 # Set standard installation directories
+# (No changes needed)
+
 set(RUNTIME_DESTINATION bin)
 set(LIBRARY_DESTINATION lib)
 set(ARCHIVE_DESTINATION lib)
@@ -107,3 +133,4 @@ install(TARGETS socket_publisher
 file(GLOB HEADERS "${CMAKE_CURRENT_SOURCE_DIR}/include/socket_publisher/*.h")
 install(FILES ${HEADERS}
     DESTINATION ${SOCKER_PUBLISHER_INCLUDE_INSTALL_DIR})
+

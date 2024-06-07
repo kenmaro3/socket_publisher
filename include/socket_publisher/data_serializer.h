@@ -6,7 +6,8 @@
 #include <memory>
 
 #include <Eigen/Core>
-#include <sioclient/sio_client.h>
+//#include <sioclient/sio_client.h>
+#include <sio_client.h>
 
 namespace stella_vslam {
 
